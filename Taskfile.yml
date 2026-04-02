@@ -1,8 +1,8 @@
 version: "3"
 
 vars:
-  BINARY: fword
-  CMD: ./cmd/fword
+  BINARY: fk
+  CMD: ./cmd/fk
   # CI can set VERSION (e.g. tag name); otherwise use git describe.
   VERSION:
     sh: 'if [ -n "${VERSION:-}" ]; then printf "%s" "$VERSION"; else git describe --tags --always --dirty 2>/dev/null || echo "dev"; fi'
@@ -22,7 +22,7 @@ tasks:
   install:
     cmds:
       - go install -trimpath {{.LDFLAGS}} {{.CMD}}
-      - echo "✓  Installed fword -> $(go env GOPATH)/bin/fword"
+      - echo "✓  Installed fk -> $(go env GOPATH)/bin/fk"
 
   # Quick dev run
   run:
@@ -33,11 +33,11 @@ tasks:
   dist:
     cmds:
       - mkdir -p dist
-      - GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fword-linux-amd64 {{.CMD}}
-      - GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fword-linux-arm64 {{.CMD}}
-      - GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fword-darwin-amd64 {{.CMD}}
-      - GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fword-darwin-arm64 {{.CMD}}
-      - GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fword-windows-amd64.exe {{.CMD}}
+      - GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fk-linux-amd64 {{.CMD}}
+      - GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fk-linux-arm64 {{.CMD}}
+      - GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fk-darwin-amd64 {{.CMD}}
+      - GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fk-darwin-arm64 {{.CMD}}
+      - GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fk-windows-amd64.exe {{.CMD}}
       - echo "✓  Binaries in ./dist/"
       - ls -lh dist/
 
@@ -45,12 +45,12 @@ tasks:
   release-dist:
     cmds:
       - mkdir -p dist
-      - GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fword-linux-amd64 {{.CMD}}
-      - GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fword-linux-arm64 {{.CMD}}
-      - GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fword-darwin-amd64 {{.CMD}}
-      - GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fword-darwin-arm64 {{.CMD}}
+      - GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fk-linux-amd64 {{.CMD}}
+      - GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fk-linux-arm64 {{.CMD}}
+      - GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fk-darwin-amd64 {{.CMD}}
+      - GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build {{.BUILD_FLAGS}} -o dist/fk-darwin-arm64 {{.CMD}}
       # Basenames only so `sha256sum -c SHA256SUMS` works next to downloaded release assets
-      - cd dist && sha256sum fword-linux-amd64 fword-linux-arm64 fword-darwin-amd64 fword-darwin-arm64 > SHA256SUMS
+      - cd dist && sha256sum fk-linux-amd64 fk-linux-arm64 fk-darwin-amd64 fk-darwin-arm64 > SHA256SUMS
       - echo "✓  Release binaries in ./dist/"
       - ls -la dist/
 
@@ -72,7 +72,7 @@ tasks:
     cmds:
       - go build -trimpath {{.LDFLAGS}} -o {{.BINARY}} {{.CMD}}
       - echo "✓  Built ./{{.BINARY}}  ({{.VERSION}})"
-      - mv fword dist/ || true
+      - mv fk dist/ || true
 
   # Print current config path
   config-path:

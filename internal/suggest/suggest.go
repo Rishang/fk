@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Rishang/fword/internal/ai"
+	"github.com/Rishang/fk/internal/ai"
 )
 
 // ANSI color codes — kept as constants so the whole file stays dependency-free
@@ -38,7 +38,7 @@ func Present(s *ai.Suggestion) {
 
 // PrintError prints a styled error to stderr
 func PrintError(msg string) {
-	fmt.Fprintf(os.Stderr, "\n%s%s✗ fword: %s%s\n\n", colorBold, colorRed, colorReset, msg)
+	fmt.Fprintf(os.Stderr, "\n%s%s✗ fk: %s%s\n\n", colorBold, colorRed, colorReset, msg)
 }
 
 // PrintSpinner is a no-op placeholder; kept for future animated spinner support.

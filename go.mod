@@ -1,4 +1,4 @@
-module github.com/Rishang/fword
+module github.com/Rishang/fk
 
 go 1.25
 

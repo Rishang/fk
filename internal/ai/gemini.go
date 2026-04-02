@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Rishang/fword/internal/config"
+	"github.com/Rishang/fk/internal/config"
 )
 
 type Gemini struct {

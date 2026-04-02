@@ -1,4 +1,4 @@
-// Package config manages fword configuration stored at ~/.config/fword/config.yaml
+// Package config manages fk configuration stored at ~/.config/fk/config.yaml
 // Uses a hand-rolled key: value parser — no external dependencies.
 package config
 
@@ -18,7 +18,7 @@ const (
 	ProviderGemini     = "gemini"
 
 	// ProjectURL is sent as HTTP-Referer to providers that require or recommend it (e.g. OpenRouter).
-	ProjectURL = "https://github.com/Rishang/fword"
+	ProjectURL = "https://github.com/Rishang/fk"
 )
 
 // providerBaseURLs is the single source of truth for each provider's API base URL.
@@ -34,7 +34,7 @@ var providerBaseURLs = map[string]string{
 	ProviderGemini:     "https://generativelanguage.googleapis.com",
 }
 
-// Config holds all fword configuration options
+// Config holds all fk configuration options
 type Config struct {
 	// Provider selects the AI backend: claude, openai, openrouter, gemini
 	Provider string
@@ -70,7 +70,7 @@ func Path() string {
 	if err != nil {
 		dir = filepath.Join(os.Getenv("HOME"), ".config")
 	}
-	return filepath.Join(dir, "fword", "config.yaml")
+	return filepath.Join(dir, "fk", "config.yaml")
 }
 
 // Load reads config from disk; missing file returns defaults without error
@@ -113,8 +113,8 @@ func Save(cfg *Config) error {
 	}
 
 	var sb strings.Builder
-	sb.WriteString("# fword configuration\n")
-	sb.WriteString("# Edit manually or use: fword config set <key> <value>\n\n")
+	sb.WriteString("# fk configuration\n")
+	sb.WriteString("# Edit manually or use: fk config set <key> <value>\n\n")
 
 	writeField := func(k, v string) {
 		if v != "" {
@@ -134,13 +134,13 @@ func Save(cfg *Config) error {
 // Validate returns an error if required fields are missing
 func (c *Config) Validate() error {
 	if c.APIKey == "" {
-		return fmt.Errorf("api_key is not set — run: fword config set api_key <YOUR_KEY>")
+		return fmt.Errorf("api_key is not set — run: fk config set api_key <YOUR_KEY>")
 	}
 	if c.Provider == "" {
-		return fmt.Errorf("provider is not set — run: fword config set provider <claude|openai|openrouter|gemini>")
+		return fmt.Errorf("provider is not set — run: fk config set provider <claude|openai|openrouter|gemini>")
 	}
 	if c.Model == "" {
-		return fmt.Errorf("model is not set — run: fword config set model <MODEL_NAME>")
+		return fmt.Errorf("model is not set — run: fk config set model <MODEL_NAME>")
 	}
 	return nil
 }

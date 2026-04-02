@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Rishang/fword/internal/ai"
-	"github.com/Rishang/fword/internal/config"
-	"github.com/Rishang/fword/internal/fs"
-	"github.com/Rishang/fword/internal/shell"
-	"github.com/Rishang/fword/internal/suggest"
+	"github.com/Rishang/fk/internal/ai"
+	"github.com/Rishang/fk/internal/config"
+	"github.com/Rishang/fk/internal/fs"
+	"github.com/Rishang/fk/internal/shell"
+	"github.com/Rishang/fk/internal/suggest"
 	cli "github.com/urfave/cli/v3"
 )
 
@@ -33,7 +33,7 @@ func main() {
 func run(args []string) error {
 	showCfg := func(_ context.Context, _ *cli.Command) error { return configShow() }
 	app := &cli.Command{
-		Name: "fword", Usage: "AI-powered shell command corrector", Version: version,
+		Name: "fk", Usage: "AI-powered shell command corrector", Version: version,
 		Action: runMain,
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "shell-init", Usage: "Print shell integration snippet (bash|zsh|fish)"},
@@ -55,7 +55,7 @@ func run(args []string) error {
 				},
 			},
 			{
-				Name: "config", Usage: "Show or update fword config", Action: showCfg,
+				Name: "config", Usage: "Show or update fk config", Action: showCfg,
 				Commands: []*cli.Command{
 					{Name: "show", Usage: "Print current config", Action: showCfg},
 					{Name: "set", Usage: "Update config values", ArgsUsage: "<key> <value> | [--provider ... --api-token ...]",
@@ -64,8 +64,8 @@ func run(args []string) error {
 							&cli.StringFlag{Name: "model"}, &cli.StringFlag{Name: "base-url"},
 							&cli.BoolFlag{Name: "auto-run"}, &cli.IntFlag{Name: "max-tokens"},
 						},
-						// Supports both positional (fword config set key val)
-						// and flag form (fword config set --provider claude --api-token sk-...).
+						// Supports both positional (fk config set key val)
+						// and flag form (fk config set --provider claude --api-token sk-...).
 						Action: func(_ context.Context, c *cli.Command) error {
 							if c.Args().Len() >= 2 {
 								return configSet(c.Args().Get(0), c.Args().Get(1))
@@ -79,7 +79,7 @@ func run(args []string) error {
 								return err
 							}
 							if n == 0 {
-								return fmt.Errorf("usage: fword config set <key> <value> OR fword config set --provider <name> --api-token <token>")
+								return fmt.Errorf("usage: fk config set <key> <value> OR fk config set --provider <name> --api-token <token>")
 							}
 							if err := config.Save(cfg); err != nil {
 								return err
@@ -93,7 +93,7 @@ func run(args []string) error {
 	return app.Run(context.Background(), args)
 }
 
-// runCat is the action for `fword cat`. Each positional arg is either a file
+// runCat is the action for `fk cat`. Each positional arg is either a file
 // or a directory; directories are walked recursively (respecting .gitignore).
 // When no args are given the current directory is walked.
 func runCat(c *cli.Command) error {
@@ -209,26 +209,26 @@ func printShellInit(shellName string) error {
 }
 
 // resolveCmd returns the failed command text.
-// Explicit --cmd flag takes priority over the $FWORD_LAST_CMD env set by the shell hook.
+// Explicit --cmd flag takes priority over the $fk_LAST_CMD env set by the shell hook.
 func resolveCmd(shellName string) (string, error) {
-	if cmd := strings.TrimSpace(os.Getenv("FWORD_LAST_CMD")); cmd != "" {
+	if cmd := strings.TrimSpace(os.Getenv("fk_LAST_CMD")); cmd != "" {
 		return cmd, nil
 	}
-	return "", fmt.Errorf("no command context found — run with --cmd or enable shell integration: eval \"$(fword --shell-init %s)\"", shellName)
+	return "", fmt.Errorf("no command context found — run with --cmd or enable shell integration: eval \"$(fk --shell-init %s)\"", shellName)
 }
 
 // resolveExitCode returns the exit code of the failed command.
-// Explicit --exit-code flag takes priority over the $FWORD_EXIT_CODE env set by the shell hook.
+// Explicit --exit-code flag takes priority over the $fk_EXIT_CODE env set by the shell hook.
 func resolveExitCode(c *cli.Command, shellName string) (int, error) {
 	if code := c.Int("exit-code"); code != -1 {
 		return code, nil
 	}
-	if s := strings.TrimSpace(os.Getenv("FWORD_EXIT_CODE")); s != "" {
+	if s := strings.TrimSpace(os.Getenv("fk_EXIT_CODE")); s != "" {
 		if n, err := strconv.Atoi(s); err == nil {
 			return n, nil
 		}
 	}
-	return -1, fmt.Errorf("no exit code context found — run with --exit-code or enable shell integration: eval \"$(fword --shell-init %s)\"", shellName)
+	return -1, fmt.Errorf("no exit code context found — run with --exit-code or enable shell integration: eval \"$(fk --shell-init %s)\"", shellName)
 }
 
 // resolveOutput returns the captured output to send to the AI.
@@ -305,7 +305,7 @@ func configShow() error {
 	if len(key) > 8 {
 		key = key[:4] + strings.Repeat("*", len(key)-8) + key[len(key)-4:]
 	}
-	fmt.Printf("\n\033[1mfword config\033[0m  (%s)\n\n", config.Path())
+	fmt.Printf("\n\033[1mfk config\033[0m  (%s)\n\n", config.Path())
 	fmt.Printf("  %-18s %s\n", "provider", cfg.Provider)
 	fmt.Printf("  %-18s %s\n", "model", cfg.Model)
 	fmt.Printf("  %-18s %s\n", "api_key", key)

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Rishang/fword/internal/config"
+	"github.com/Rishang/fk/internal/config"
 )
 
 type OpenAI struct {
@@ -59,7 +59,7 @@ func (o *OpenAI) Query(ctx context.Context, req *Request) (*Suggestion, error) {
 	}
 	if o.cfg.Provider == config.ProviderOpenRouter {
 		headers["HTTP-Referer"] = config.ProjectURL
-		headers["X-Title"] = "fword"
+		headers["X-Title"] = "fk"
 	}
 
 	var or openAIResponse
