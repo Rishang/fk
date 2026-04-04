@@ -2,14 +2,27 @@
 
 > **You typed it wrong. `fk` fixes it.**
 
-AI-powered shell command corrector. Run a broken command, type `fk` — get the fix instantly. Built in Go. Zero runtime dependencies.
+<p align="center">
+  <img src="https://img.shields.io/github/v/release/Rishang/fk?style=flat-square&color=ff69b4" alt="release">
+  <img src="https://img.shields.io/github/stars/Rishang/fk?style=flat-square&color=yellow" alt="stars">
+  <img src="https://img.shields.io/github/license/Rishang/fk?style=flat-square" alt="license">
+  <img src="https://img.shields.io/badge/built%20with-Go-00ADD8?style=flat-square&logo=go" alt="go">
+  <img src="https://img.shields.io/badge/zero-dependencies-brightgreen?style=flat-square" alt="zero deps">
+</p>
+
+<p align="center">
+  AI-powered shell command corrector.<br>
+  Run a broken command, type <code>fk</code> — get the fix instantly.<br>
+  Built in Go. Zero runtime dependencies. Works with any AI provider.
+</p>
 
 ```
 $ git psuh origin main
 fatal: 'psuh' is not a git command. See 'git --help'.
 
 $ fk
-git push origin main
+  git push origin main
+  ✔ run it? [y/n]
 ```
 
 ```
@@ -17,23 +30,36 @@ $ docker-compose up -d
 ERROR: Version in "./docker-compose.yml" is unsupported.
 
 $ fk
-docker compose up -d
+  docker compose up -d
+  ✔ run it? [y/n]
 ```
 
 Inspired by [thefuck](https://github.com/nvbn/thefuck). Faster. No Python. No rules to maintain.
 
 ---
 
+## Table of Contents
+
+- [Install](#install)
+- [Setup](#setup)
+- [How it works](#how-it-works)
+- [Flags](#flags)
+- [Config](#config)
+- [`fk cat`](#fk-cat--files-to-prompt)
+- [Building](#building)
+
+---
+
 ## Install
 
-### With [install-release](https://pypi.org/project/install-release/) (`ir`)
+### With [install-release](https://pypi.org/project/install-release/) (`ir`) — recommended
 
 ```bash
 pip install -U install-release
 ir get https://github.com/Rishang/fk
 ```
 
-Binaries go to `~/bin` — add it to your PATH:
+Binaries go to `~/bin` — make sure it's on your PATH:
 
 ```bash
 export PATH="$HOME/bin:$PATH"
@@ -43,12 +69,12 @@ export PATH="$HOME/bin:$PATH"
 
 Grab the binary for your platform from the [latest release](https://github.com/Rishang/fk/releases/latest):
 
-| Platform    | Asset               |
-|-------------|---------------------|
-| Linux x64   | `fk-linux-amd64`   |
-| Linux arm64 | `fk-linux-arm64`   |
-| macOS x64   | `fk-darwin-amd64`  |
-| macOS arm64 | `fk-darwin-arm64`  |
+| Platform    | Asset              |
+|-------------|--------------------|
+| Linux x64   | `fk-linux-amd64`  |
+| Linux arm64 | `fk-linux-arm64`  |
+| macOS x64   | `fk-darwin-amd64` |
+| macOS arm64 | `fk-darwin-arm64` |
 
 ```bash
 # Example: Linux x86_64
@@ -65,7 +91,7 @@ cd fk
 task install        # installs to $(go env GOPATH)/bin/fk
 ```
 
-Requires Go 1.21+.
+> Requires Go 1.21+
 
 ---
 
@@ -114,7 +140,8 @@ $ kubectll get pods
 command not found: kubectll
 
 $ fk
-kubectl get pods
+  kubectl get pods
+  ✔ run it? [y/n]
 ```
 
 ---
@@ -122,31 +149,59 @@ kubectl get pods
 ## How it works
 
 ```
-failing command + exit code
-         │
-         ▼
-   shell hook captures context
-         │
-         ▼
-      fk sends prompt to AI
-         │
-         ▼
-   AI returns fix (commands only, no prose)
-         │
-         ▼
-      fk prints the fix
+  failing command + exit code
+           │
+           ▼
+    shell hook captures context
+    (PROMPT_COMMAND / precmd)
+           │
+           ▼
+       fk builds a prompt
+           │
+           ▼
+      AI returns the fix
+    (commands only, no prose)
+           │
+           ▼
+       fk prints the fix
 ```
 
-1. The shell hook (`PROMPT_COMMAND` / `precmd`) captures the last **non-fk** command and its exit code into env vars — so running `fk` multiple times always points at the original failing command.
+1. The shell hook captures the last **non-fk** command and its exit code into env vars before each prompt.
 2. `fk` builds a terse prompt and calls your configured AI provider.
-3. AI responds with `FIX: <cmd>` or `STEPS:\n$ cmd1\n$ cmd2…`
-4. `fk` prints the corrected command(s) as plain text.
+3. The AI responds with `FIX: <cmd>` or `STEPS:\n$ cmd1\n$ cmd2…`
+4. `fk` presents the fix. Optionally runs it for you with `--auto-run`.
 
 ---
 
-## Options
+## Flags
 
-| Config key   | Default                    | Description                                            |
+| Flag                | Description                                                       |
+|---------------------|-------------------------------------------------------------------|
+| `--rerun` / `-r`    | Re-run the failed command to capture live output before asking AI |
+| `--auto-run`        | Run the fix immediately without prompting                         |
+| `--verbose` / `-v`  | Print prompts sent to the LLM and estimated token counts          |
+| `--debug`           | Print raw AI response before parsing                              |
+| `--cmd`             | Provide the failed command explicitly (no shell hook needed)      |
+| `--exit-code`       | Provide the exit code explicitly                                  |
+| `--output`          | Provide captured output explicitly                                |
+| `--shell`           | Override shell detection (`bash`\|`zsh`\|`fish`)                 |
+| `--version`         | Print the version                                                 |
+
+```bash
+# Direct usage — no shell integration needed
+fk --cmd "kubectl get pods" --exit-code 1
+fk --cmd "cargo build" --exit-code 101 --rerun --debug
+fk --cmd "pip install numpy" --exit-code 1 --auto-run
+
+# Debug: see exactly what's sent to the LLM
+fk -v
+```
+
+---
+
+## Config
+
+| Key          | Default                    | Description                                            |
 |--------------|----------------------------|--------------------------------------------------------|
 | `provider`   | `claude`                   | AI backend: `claude`, `openai`, `openrouter`, `gemini` |
 | `api_key`    | —                          | Your provider API token                                |
@@ -162,29 +217,9 @@ fk config set --provider openai --api-token sk-xxxx --model gpt-4o
 
 ---
 
-## Flags
-
-| Flag              | Description                                                        |
-|-------------------|--------------------------------------------------------------------|
-| `--rerun` / `-r`  | Re-run the failed command to capture live output before asking AI  |
-| `--auto-run`      | Run the fix immediately without prompting                          |
-| `--debug`         | Print raw AI response before parsing                               |
-| `--cmd`           | Provide the failed command explicitly (no shell hook needed)       |
-| `--exit-code`     | Provide the exit code explicitly                                   |
-| `--output`        | Provide captured output explicitly                                 |
-
-```bash
-# Direct usage — no shell integration needed
-fk --cmd "kubectl get pods" --exit-code 1
-fk --cmd "cargo build" --exit-code 101 --rerun --debug
-fk --cmd "pip install numpy" --exit-code 1 --auto-run
-```
-
----
-
 ## `fk cat` — files to prompt
 
-Dump files or a directory into a clean `<file>…</file>` format, ready to paste into any AI prompt.
+Dump files or a directory into a clean `<file>…</file>` format, ready to paste into any AI chat.
 
 ```bash
 fk cat go.mod go.sum          # specific files
@@ -214,3 +249,9 @@ task dist         # cross-compile: linux/darwin/windows amd64+arm64
 task test         # run tests
 task install      # install to $GOPATH/bin
 ```
+
+---
+
+<p align="center">
+  If <code>fk</code> saved you time, consider giving it a ⭐
+</p>
