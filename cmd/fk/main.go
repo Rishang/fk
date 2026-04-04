@@ -217,6 +217,15 @@ func resolveCmd(shellName string) (string, error) {
 	return "", fmt.Errorf("no command context found — run with --cmd or enable shell integration: eval \"$(fk --shell-init %s)\"", shellName)
 }
 
+// isFkCommand reports whether cmd is an invocation of fk (guards --rerun from recursion).
+func isFkCommand(cmd string) bool {
+	fields := strings.Fields(cmd)
+	if len(fields) == 0 {
+		return false
+	}
+	return filepath.Base(fields[0]) == "fk"
+}
+
 // resolveExitCode returns the exit code of the failed command.
 // Explicit --exit-code flag takes priority over the $fk_EXIT_CODE env set by the shell hook.
 func resolveExitCode(c *cli.Command, shellName string) (int, error) {
@@ -239,6 +248,9 @@ func resolveOutput(c *cli.Command, shellName, cmd string) (string, error) {
 		return output, nil
 	}
 	if c.Bool("rerun") {
+		if isFkCommand(cmd) {
+			return "", nil // refuse to re-run fk itself
+		}
 		exe, args := shellExecArgs(shellName, cmd)
 		ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 		defer cancel()

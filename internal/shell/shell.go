@@ -29,9 +29,14 @@ func bashInit(bin string) string {
 
 _fk_hook() {
   # Capture exit code immediately before anything else runs
-  export fk_EXIT_CODE=$?
+  local _fk_ec=$?
   # Grab last history entry, strip the history number prefix
-  export fk_LAST_CMD=$(HISTTIMEFORMAT="" history 1 | sed 's/^[ ]*[0-9]*[ ]*//')
+  local _fk_cmd=$(HISTTIMEFORMAT="" history 1 | sed 's/^[ ]*[0-9]*[ ]*//')
+  # Skip fk commands so fk_LAST_CMD always holds the last non-fk command
+  case "$_fk_cmd" in
+    fk|fk\ *) ;;
+    *) export fk_EXIT_CODE=$_fk_ec; export fk_LAST_CMD=$_fk_cmd ;;
+  esac
 }
 
 # Prepend to PROMPT_COMMAND so it fires before any other hooks
@@ -53,9 +58,14 @@ func zshInit(bin string) string {
 # Paste this into ~/.zshrc or run: eval "$(fk --shell-init zsh)"
 
 _fk_hook() {
-  export fk_EXIT_CODE=$?
+  local _fk_ec=$?
   # fc -ln -1 prints last command without line number
-  export fk_LAST_CMD=$(fc -ln -1 2>/dev/null | sed 's/^[[:space:]]*//')
+  local _fk_cmd=$(fc -ln -1 2>/dev/null | sed 's/^[[:space:]]*//')
+  # Skip fk commands so fk_LAST_CMD always holds the last non-fk command
+  case "$_fk_cmd" in
+    fk|fk\ *) ;;
+    *) export fk_EXIT_CODE=$_fk_ec; export fk_LAST_CMD=$_fk_cmd ;;
+  esac
 }
 
 # Register with zsh's precmd array (runs after every command, before prompt)
@@ -76,8 +86,12 @@ func fishInit(bin string) string {
 # Add to ~/.config/fish/config.fish or run: fk --shell-init fish | source
 
 function _fk_hook --on-event fish_postexec
-  set -gx fk_EXIT_CODE $status
-  set -gx fk_LAST_CMD $argv[1]
+  # Skip fk commands so fk_LAST_CMD always holds the last non-fk command
+  set -l _fk_cmd $argv[1]
+  if not string match -qr '^fk(\s|$)' -- "$_fk_cmd"
+    set -gx fk_EXIT_CODE $status
+    set -gx fk_LAST_CMD $_fk_cmd
+  end
 end
 
 function fk
