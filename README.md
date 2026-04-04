@@ -1,16 +1,26 @@
 # fk 🐷
 
-AI-powered shell command corrector. After you run a command, `fk` asks an AI model for a fix and prints corrected command(s) as plain text.
+> **You typed it wrong. `fk` fixes it.**
 
-Inspired by [thefuck](https://github.com/nvbn/thefuck). Built in Go. Zero runtime dependencies.
+AI-powered shell command corrector. Run a broken command, type `fk` — get the fix instantly. Built in Go. Zero runtime dependencies.
 
 ```
 $ git psuh origin main
-fatal: 'psuh' is not a git command.
+fatal: 'psuh' is not a git command. See 'git --help'.
 
 $ fk
 git push origin main
 ```
+
+```
+$ docker-compose up -d
+ERROR: Version in "./docker-compose.yml" is unsupported.
+
+$ fk
+docker compose up -d
+```
+
+Inspired by [thefuck](https://github.com/nvbn/thefuck). Faster. No Python. No rules to maintain.
 
 ---
 
@@ -18,49 +28,36 @@ git push origin main
 
 ### With [install-release](https://pypi.org/project/install-release/) (`ir`)
 
-[install-release](https://github.com/Rishang/install-release) installs release binaries from GitHub for your OS and CPU. The CLI command is **`ir`**.
-
-Prerequisites: Python 3.9+, `pip`, and [libmagic](https://github.com/ahupp/python-magic#installation) (see the install-release readme).
-
 ```bash
 pip install -U install-release
+ir get https://github.com/Rishang/fk
 ```
 
-Binaries go to `~/bin` by default — put that on your `PATH` (e.g. in `~/.bashrc` or `~/.zshrc`):
+Binaries go to `~/bin` — add it to your PATH:
 
 ```bash
 export PATH="$HOME/bin:$PATH"
 ```
 
-Install or upgrade **fk** from the latest GitHub release:
+### Pre-built binary
+
+Grab the binary for your platform from the [latest release](https://github.com/Rishang/fk/releases/latest):
+
+| Platform    | Asset               |
+|-------------|---------------------|
+| Linux x64   | `fk-linux-amd64`   |
+| Linux arm64 | `fk-linux-arm64`   |
+| macOS x64   | `fk-darwin-amd64`  |
+| macOS arm64 | `fk-darwin-arm64`  |
 
 ```bash
-ir get https://github.com/Rishang/fk
-```
-
-Useful follow-ups: `ir ls`, `ir upgrade`, `ir rm fk`. Use `ir get --help` for flags (e.g. `-f` to pick a specific release asset).
-
-### Pre-built binary (manual)
-
-Each [release](https://github.com/Rishang/fk/releases/latest) ships plain binaries and a `SHA256SUMS` file. Pick the name that matches your platform:
-
-| Platform   | Asset                 |
-|------------|------------------------|
-| Linux x64  | `fk-linux-amd64`    |
-| Linux arm64| `fk-linux-arm64`    |
-| macOS x64  | `fk-darwin-amd64`   |
-| macOS arm64| `fk-darwin-arm64`   |
-
-Example (Linux x86_64):
-
-```bash
+# Example: Linux x86_64
 curl -fL -o fk https://github.com/Rishang/fk/releases/latest/download/fk-linux-amd64
 chmod +x fk
-sudo mv fk /usr/local/bin/   # or another directory on your PATH
+sudo mv fk /usr/local/bin/
 ```
 
-
-### From source (requires Go 1.21+)
+### From source
 
 ```bash
 git clone https://github.com/Rishang/fk
@@ -68,108 +65,134 @@ cd fk
 task install        # installs to $(go env GOPATH)/bin/fk
 ```
 
+Requires Go 1.21+.
+
 ---
 
 ## Setup
 
-### 1. Configure your AI provider
+### 1. Pick your AI provider
+
+`fk` works with any major AI provider — or your own local model:
 
 ```bash
 # Claude (Anthropic)
-fk config set --provider claude --api-token sk-ant-xxxxxxxxxxxx --model claude-sonnet-4-20250514
+fk config set --provider claude --api-token sk-ant-xxxx --model claude-sonnet-4-20250514
 
 # OpenAI
-fk config set --provider openai --api-token sk-xxxxxxxxxxxx --model gpt-4o
+fk config set --provider openai --api-token sk-xxxx --model gpt-4o
 
-# OpenRouter (access 100+ models with one key)
-fk config set --provider openrouter --api-token sk-or-xxxxxxxxxxxx --model openai/gpt-5.4-mini
+# OpenRouter (100+ models, one key)
+fk config set --provider openrouter --api-token sk-or-xxxx --model openai/gpt-4o-mini
 
 # Google Gemini
-fk config set --provider gemini --api-token AIzaSy-xxxxxxxxxxxx --model gemini-1.5-flash
+fk config set --provider gemini --api-token AIzaSy-xxxx --model gemini-1.5-flash
 
-# Custom endpoint (Ollama, LiteLLM proxy, etc.)
-fk config set --provider openai --api-token sk-xxxxxxxxxxxx --base-url http://localhost:11434/v1 --model llama3.2
+# Local model (Ollama, LiteLLM, etc.)
+fk config set --provider openai --api-token x --base-url http://localhost:11434/v1 --model llama3.2
 ```
 
-Config is stored at `~/.config/fk/config.yaml`.
+Config lives at `~/.config/fk/config.yaml`.
 
-### 2. Add shell integration
+### 2. Hook into your shell
 
 ```bash
 # bash — add to ~/.bashrc
-echo 'eval "$(/path/to/fk --shell-init bash)"' >> ~/.bashrc
-source ~/.bashrc
+echo 'eval "$(fk --shell-init bash)"' >> ~/.bashrc && source ~/.bashrc
 
 # zsh — add to ~/.zshrc
-echo 'eval "$(/path/to/fk --shell-init zsh)"' >> ~/.zshrc
-source ~/.zshrc
+echo 'eval "$(fk --shell-init zsh)"' >> ~/.zshrc && source ~/.zshrc
 
 # fish — add to ~/.config/fish/config.fish
-echo '/path/to/fk --shell-init fish | source' >> ~/.config/fish/config.fish
+echo 'fk --shell-init fish | source' >> ~/.config/fish/config.fish
 ```
 
-### 3. Use it
-
-Run any failing command, then type `fk`:
+### 3. Break things. Fix them.
 
 ```bash
-$ docker-compose up -d
-ERROR: Version in "./docker-compose.yml" is unsupported.
+$ kubectll get pods
+command not found: kubectll
 
 $ fk
+kubectl get pods
 ```
+
+---
+
+## How it works
+
+```
+failing command + exit code
+         │
+         ▼
+   shell hook captures context
+         │
+         ▼
+      fk sends prompt to AI
+         │
+         ▼
+   AI returns fix (commands only, no prose)
+         │
+         ▼
+      fk prints the fix
+```
+
+1. The shell hook (`PROMPT_COMMAND` / `precmd`) captures the last **non-fk** command and its exit code into env vars — so running `fk` multiple times always points at the original failing command.
+2. `fk` builds a terse prompt and calls your configured AI provider.
+3. AI responds with `FIX: <cmd>` or `STEPS:\n$ cmd1\n$ cmd2…`
+4. `fk` prints the corrected command(s) as plain text.
 
 ---
 
 ## Options
 
-| Config key        | Default                     | Description                                           |
-|-------------------|-----------------------------|-------------------------------------------------------|
-| `provider`        | `claude`                    | AI backend: `claude`, `openai`, `openrouter`, `gemini`|
-| `api_key`         | —                           | Authentication token for the provider                 |
-| `model`           | `claude-sonnet-4-20250514`  | Model name                                            |
-| `base_url`        | *(provider default)*        | Override API endpoint (proxies, local models)         |
-| `max_tokens`      | `512`                       | Max tokens in AI response                             |
+| Config key   | Default                    | Description                                            |
+|--------------|----------------------------|--------------------------------------------------------|
+| `provider`   | `claude`                   | AI backend: `claude`, `openai`, `openrouter`, `gemini` |
+| `api_key`    | —                          | Your provider API token                                |
+| `model`      | `claude-sonnet-4-20250514` | Model name                                             |
+| `base_url`   | *(provider default)*       | Override endpoint — for proxies or local models        |
+| `max_tokens` | `512`                      | Max tokens in AI response                              |
+| `auto_run`   | `false`                    | Execute suggestion without confirmation                |
 
 ```bash
-fk config show                       # view all settings
-fk config set --provider openrouter --api-token sk-or-xxxx --base-url https://openrouter.ai/api/v1 --model openai/gpt-5.4-mini
-fk --rerun                           # Re-run the command to get output for more accurate AI context (idempotent cmds only)
+fk config show          # view current settings
+fk config set --provider openai --api-token sk-xxxx --model gpt-4o
 ```
 
 ---
 
-## Direct usage (no shell integration)
+## Flags
+
+| Flag              | Description                                                        |
+|-------------------|--------------------------------------------------------------------|
+| `--rerun` / `-r`  | Re-run the failed command to capture live output before asking AI  |
+| `--auto-run`      | Run the fix immediately without prompting                          |
+| `--debug`         | Print raw AI response before parsing                               |
+| `--cmd`           | Provide the failed command explicitly (no shell hook needed)       |
+| `--exit-code`     | Provide the exit code explicitly                                   |
+| `--output`        | Provide captured output explicitly                                 |
 
 ```bash
+# Direct usage — no shell integration needed
 fk --cmd "kubectl get pods" --exit-code 1
-fk --cmd "pnpm run build" --exit-code 1 --output "Cannot find module 'webpack'"
-fk --cmd "docker compose up" --exit-code 1 --rerun
-fk --cmd "pip install numpy" --exit-code 1
-fk --cmd "cargo build" --exit-code 101 --debug    # show raw AI response
+fk --cmd "cargo build" --exit-code 101 --rerun --debug
+fk --cmd "pip install numpy" --exit-code 1 --auto-run
 ```
 
 ---
 
-## `fk cat` — file-to-prompt formatter
+## `fk cat` — files to prompt
 
-Concatenate files or a directory into a prompt-ready string, with each file
-wrapped in `<file path>…</file path>` tags.  Pipe the output directly into
-your AI prompt or clipboard.
+Dump files or a directory into a clean `<file>…</file>` format, ready to paste into any AI prompt.
 
 ```bash
-# Explicit files (like cat)
-fk cat go.mod go.sum
-
-# Walk a directory (respects .gitignore when inside a git repo)
-fk cat ./internal
-fk cat internal/
-
-# Walk current directory (default when no args given)
-fk cat
+fk cat go.mod go.sum          # specific files
+fk cat ./internal             # walk a directory (respects .gitignore)
+fk cat                        # walk current directory
 ```
 
-Example output:
+Output:
 
 ```
 <file go.mod>
@@ -183,19 +206,11 @@ module github.com/Rishang/fk
 
 ---
 
-## How it works
-
-1. Shell hook (`PROMPT_COMMAND` / `precmd`) records the last command and its exit code into env vars.
-2. `fk` reads those vars, builds a prompt, and calls the configured AI provider.
-3. AI returns either `FIX: <cmd>` or `STEPS:\n$ cmd1\n$ cmd2…`
-4. `fk` prints corrected command(s) as plain text.
-
-The AI prompt is intentionally terse: *commands only, no prose, no docs*.
-
----
-
-## Building releases
+## Building
 
 ```bash
-task dist           # cross-compiles for linux/darwin/windows amd64+arm64
+task build        # build for current platform → ./dist/fk
+task dist         # cross-compile: linux/darwin/windows amd64+arm64
+task test         # run tests
+task install      # install to $GOPATH/bin
 ```
